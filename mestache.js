@@ -1,5 +1,5 @@
 /*
-    Mestache 0.1.0
+    Mestache 0.2.0
 
     Yet another implementation of the Mustache template language in JavaScript
 
@@ -144,6 +144,14 @@ var Mestache = (function () {
 
                         break;
 
+                    case '>':
+                        tokens.push({
+                            type: type,
+                            name: name
+                        });
+
+                        break;
+
                     case '&':
                     case '{':
                         tokens.push({
@@ -202,7 +210,7 @@ var Mestache = (function () {
         return data;
     };
 
-    var renderTokens = function (tokens, context) {
+    var renderTokens = function (tokens, context, partials) {
         var result = [];
 
         context = Object(context);
@@ -213,7 +221,7 @@ var Mestache = (function () {
                     var data = lookupData(token.name, context);
 
                     if (util.isEmpty(data)) {
-                        result.push(renderTokens(token.value, context));
+                        result.push(renderTokens(token.value, context, partials));
                     }
 
                     break;
@@ -229,13 +237,30 @@ var Mestache = (function () {
                         util.forEach(data, function (item) {
                             var itemContext = util.isObject(item) ? item : {'.': item};
 
-                            result.push(renderTokens(token.value, itemContext));
+                            result.push(renderTokens(token.value, itemContext, partials));
                         });
                     } else if (util.isObject(data)) {
-                        result.push(renderTokens(token.value, data));
+                        result.push(renderTokens(token.value, data, partials));
                     } else {
-                        result.push(renderTokens(token.value, context));
+                        result.push(renderTokens(token.value, context, partials));
                     }
+
+                    break;
+
+                case '>':
+                    if (!util.isObject(partials)) {
+                        return;
+                    }
+
+                    var data = lookupData(token.name, partials);
+
+                    //data = String(data);
+
+                    if (!data || !util.isString(data)) {
+                        return;
+                    }
+
+                    result.push(renderTokens(parseTemplate(data), context, partials));
 
                     break;
 
@@ -271,8 +296,8 @@ var Mestache = (function () {
         this._tokens = parseTemplate(template);
     };
 
-    MestacheConstructor.prototype.compileTemplate = function (context) {
-        return renderTokens(this._tokens, context);
+    MestacheConstructor.prototype.compileTemplate = function (context, partials) {
+        return renderTokens(this._tokens, context, partials);
     };
 
     return MestacheConstructor;
