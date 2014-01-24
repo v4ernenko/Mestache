@@ -1,27 +1,16 @@
-/*
-    Mestache 0.2.0
-
-    Yet another implementation of the Mustache template language in JavaScript
-
-    Released under the MIT License (http://www.opensource.org/licenses/mit-license.php)
-
-    Usage:
-
-    var result,
-
-        context = {
-            name: 'Vadim'
-        },
-
-        template = 'Hello, {{name}}!',
-
-        mestache = new Mestache(template);
-
-    result = mestache.compileTemplate(context);
-*/
+/**
+ * @overview Yet another implementation of the Mustache template language in JavaScript.
+ * @license MIT
+ * @version 0.2.1
+ * @author Vadim Chernenko
+ * @see {@link http://mustache.github.io/mustache.5.html|Mustache reference}
+ * @see {@link https://github.com/v4ernenko/Mestache|Mestache source code repository}
+ */
 
 var Mestache = (function () {
     'use strict';
+
+    // Internal helper methods
 
     var util = {
             trim: String.trim || function (value) {
@@ -88,13 +77,23 @@ var Mestache = (function () {
 
                     .replace(/'/g, '&apos;');
             }
-        },
+        };
 
-        oTag = '{{',
+    // Template tags description
+
+    var oTag = '{{',
 
         cTagRE = /\}\}\}?/g;
 
-    var parseTemplate = function (template) {
+    /**
+     * Breaks up the given `template` string into a tree of tokens.
+     *
+     * @param {string} template
+     * @return {Array.<Object>} Array of tokens.
+     * @private
+     */
+
+    function parseTemplate(template) {
         var type,
 
             name,
@@ -102,8 +101,6 @@ var Mestache = (function () {
             stack = [],
 
             tokens = [],
-
-            //chunks = template.split(/\{\{|\}\}\}?/);
 
             chunks = template.replace(cTagRE, oTag).split(oTag);
 
@@ -186,31 +183,50 @@ var Mestache = (function () {
         });
 
         return tokens;
-    };
+    }
 
-    var lookupData = function (name, context) {
-        var data = context[name];
+    /**
+     * Returns the value of the given `name` in the given `context`.
+     *
+     * @param {string} name
+     * @param {Object} context
+     * @return {*} Context value.
+     * @private
+     */
+
+    function getContextValue(name, context) {
+        var value = context[name];
 
         if (name.indexOf('.') > 0) {
-            data = context;
+            value = context;
 
             var i = 0,
 
                 names = name.split('.');
 
-            while (data && i < names.length) {
-                data = data[names[i++]];
+            while (value && i < names.length) {
+                value = value[names[i++]];
             }
         }
 
-        if (util.isFunction(data)) {
-            data = data.call(context);
+        if (util.isFunction(value)) {
+            value = value.call(context);
         }
 
-        return data;
-    };
+        return value;
+    }
 
-    var renderTokens = function (tokens, context, partials) {
+    /**
+     * Renders the given array of `tokens` using the given `context` and `partials`.
+     *
+     * @param {Array.<Object>} tokens
+     * @param {Object} context
+     * @param {Object} [partials]
+     * @return {string} Compiled template.
+     * @private
+     */
+
+    function renderTokens(tokens, context, partials) {
         var result = [];
 
         context = Object(context);
@@ -218,29 +234,29 @@ var Mestache = (function () {
         util.forEach(tokens, function (token) {
             switch (token.type) {
                 case '^':
-                    var data = lookupData(token.name, context);
+                    var value = getContextValue(token.name, context);
 
-                    if (util.isEmpty(data)) {
+                    if (util.isEmpty(value)) {
                         result.push(renderTokens(token.value, context, partials));
                     }
 
                     break;
 
                 case '#':
-                    var data = lookupData(token.name, context);
+                    var value = getContextValue(token.name, context);
 
-                    if (util.isEmpty(data)) {
+                    if (util.isEmpty(value)) {
                         return;
                     }
 
-                    if (util.isArray(data)) {
-                        util.forEach(data, function (item) {
+                    if (util.isArray(value)) {
+                        util.forEach(value, function (item) {
                             var itemContext = util.isObject(item) ? item : {'.': item};
 
                             result.push(renderTokens(token.value, itemContext, partials));
                         });
-                    } else if (util.isObject(data)) {
-                        result.push(renderTokens(token.value, data, partials));
+                    } else if (util.isObject(value)) {
+                        result.push(renderTokens(token.value, value, partials));
                     } else {
                         result.push(renderTokens(token.value, context, partials));
                     }
@@ -252,29 +268,27 @@ var Mestache = (function () {
                         return;
                     }
 
-                    var data = lookupData(token.name, partials);
+                    var value = getContextValue(token.name, partials);
 
-                    //data = String(data);
-
-                    if (!data || !util.isString(data)) {
+                    if (!value || !util.isString(value)) {
                         return;
                     }
 
-                    result.push(renderTokens(parseTemplate(data), context, partials));
+                    result.push(renderTokens(parseTemplate(value), context, partials));
 
                     break;
 
                 case '&':
                 case 'name':
-                    var data = lookupData(token.name, context);
+                    var value = getContextValue(token.name, context);
 
-                    if (util.isEmpty(data)) {
+                    if (util.isEmpty(value)) {
                         return;
                     }
 
-                    data = String(data);
+                    value = String(value);
 
-                    result.push(token.type === '&' ? data : util.escapeHTML(data));
+                    result.push(token.type === '&' ? value : util.escapeHTML(value));
 
                     break;
 
@@ -286,19 +300,34 @@ var Mestache = (function () {
         });
 
         return result.join('');
-    };
+    }
 
-    var MestacheConstructor = function (template) {
+    /**
+     * Mestache class.
+     *
+     * @param {string} template
+     * @constructor
+     */
+
+    function Mestache(template) {
         if (!template || !util.isString(template)) {
             throw new Error('Mestache: bad template!');
         }
 
         this._tokens = parseTemplate(template);
-    };
+    }
 
-    MestacheConstructor.prototype.compileTemplate = function (context, partials) {
+    /**
+     * Compiles the template with the given `context` and `partials`.
+     *
+     * @param {Object} context
+     * @param {Object} [partials]
+     * @return {string} Compiled template.
+     */
+
+    Mestache.prototype.compileTemplate = function (context, partials) {
         return renderTokens(this._tokens, context, partials);
     };
 
-    return MestacheConstructor;
+    return Mestache;
 })();
