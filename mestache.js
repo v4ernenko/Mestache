@@ -1,7 +1,7 @@
 /**
  * @overview Yet another implementation of the Mustache template language in JavaScript.
  * @license MIT
- * @version 0.2.1
+ * @version 0.2.2
  * @author Vadim Chernenko
  * @see {@link http://mustache.github.io/mustache.5.html|Mustache reference}
  * @see {@link https://github.com/v4ernenko/Mestache|Mestache source code repository}
@@ -114,71 +114,73 @@ var Mestache = (function () {
                     type: 'text',
                     value: chunk
                 });
-            } else {
-                type = chunk.charAt(0);
 
-                name = util.trim(chunk.slice(1));
+                return;
+            }
 
-                switch (type) {
-                    case '!': break;
+            type = chunk.charAt(0);
 
-                    case '#':
-                    case '^':
-                        var sectionTokens = [];
+            name = util.trim(chunk.slice(1));
 
-                        tokens.push({
-                            type: type,
-                            name: name,
-                            value: sectionTokens
-                        });
+            switch (type) {
+                case '!': break;
 
-                        stack.push({
-                            name: name,
-                            root: tokens
-                        });
+                case '#':
+                case '^':
+                    var sectionTokens = [];
 
-                        tokens = sectionTokens;
+                    tokens.push({
+                        type: type,
+                        name: name,
+                        value: sectionTokens
+                    });
 
-                        break;
+                    stack.push({
+                        name: name,
+                        root: tokens
+                    });
 
-                    case '>':
-                        tokens.push({
-                            type: type,
-                            name: name
-                        });
+                    tokens = sectionTokens;
 
-                        break;
+                    break;
 
-                    case '&':
-                    case '{':
-                        tokens.push({
-                            type: '&',
-                            name: name
-                        });
+                case '>':
+                    tokens.push({
+                        type: type,
+                        name: name
+                    });
 
-                        break;
-                        
-                    case '/':
-                        var stackItem = stack.pop();
+                    break;
 
-                        if (!stackItem) {
-                            throw new Error('Mestache: unopened section "' + name + '"!');
-                        }
+                case '&':
+                case '{':
+                    tokens.push({
+                        type: '&',
+                        name: name
+                    });
 
-                        if (name === stackItem.name) {
-                            tokens = stackItem.root;
-                        } else {
-                            throw new Error('Mestache: unclosed section "' + stackItem.name + '"!');
-                        }
+                    break;
+                    
+                case '/':
+                    var stackItem = stack.pop();
 
-                        break;
+                    if (!stackItem) {
+                        throw new Error('Mestache: unopened section "' + name + '"!');
+                    }
 
-                    default:
-                        tokens.push({
-                            type: 'name',
-                            name: util.trim(chunk)
-                        });
-                }
+                    if (name === stackItem.name) {
+                        tokens = stackItem.root;
+                    } else {
+                        throw new Error('Mestache: unclosed section "' + stackItem.name + '"!');
+                    }
+
+                    break;
+
+                default:
+                    tokens.push({
+                        type: 'name',
+                        name: util.trim(chunk)
+                    });
             }
         });
 
@@ -195,18 +197,22 @@ var Mestache = (function () {
      */
 
     function getContextValue(name, context) {
-        var value = context[name];
+        var value;
 
         if (name.indexOf('.') > 0) {
             value = context;
 
             var i = 0,
 
-                names = name.split('.');
+                names = name.split('.'),
 
-            while (value && i < names.length) {
+                namesLength = names.length;
+
+            while (value && i < namesLength) {
                 value = value[names[i++]];
             }
+        } else {
+            value = context[name];
         }
 
         if (util.isFunction(value)) {
