@@ -11,12 +11,19 @@ var result,
         name: 'Vadim'
     },
 
+    partials = {}, // optional
+
     template = 'Hello, {{name}}!',
 
     mestache = new Mestache(template);
 
-result = mestache.compileTemplate(context);
+result = mestache.compileTemplate(context, partials);
 ```
+
+## Divergence
+
+- Only `mustache` tags are supported.
+- Section lambdas not retrieving content.
 
 ## License
 
