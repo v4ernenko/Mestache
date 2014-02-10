@@ -75,7 +75,7 @@ var Mestache = (function () {
 
                     .replace(/"/g, '&quot;')
 
-                    .replace(/'/g, '&apos;');
+                    .replace(/'/g, '&#39;');
             }
         };
 
