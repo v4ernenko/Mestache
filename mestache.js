@@ -1,7 +1,7 @@
 /**
  * @overview Yet another implementation of the Mustache template language in JavaScript.
  * @license MIT
- * @version 0.2.2
+ * @version 0.2.3
  * @author Vadim Chernenko
  * @see {@link http://mustache.github.io/mustache.5.html|Mustache reference}
  * @see {@link https://github.com/v4ernenko/Mestache|Mestache source code repository}
