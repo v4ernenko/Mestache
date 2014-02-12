@@ -1,7 +1,7 @@
 /**
  * @overview Yet another implementation of the Mustache template language in JavaScript.
  * @license MIT
- * @version 0.2.3
+ * @version 0.2.4
  * @author Vadim Chernenko
  * @see {@link http://mustache.github.io/mustache.5.html|Mustache reference}
  * @see {@link https://github.com/v4ernenko/Mestache|Mestache source code repository}
@@ -13,9 +13,17 @@ var Mestache = (function () {
     // Internal helper methods
 
     var util = {
-            trim: String.trim || function (value) {
-                return String(value).replace(/^\s+|\s+$/g, '');
-            },
+            trim: (function () {
+                if (''.trim) {
+                    return function (value) {
+                        return String(value).trim();
+                    };
+                }
+
+                return function (value) {
+                    return String(value).replace(/^\s+|\s+$/g, '');
+                };
+            })(),
 
             isArray: Array.isArray || function (value) {
                 return {}.toString.call(value) === '[object Array]';
