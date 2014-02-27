@@ -1,13 +1,13 @@
 /**
  * @overview Yet another implementation of the Mustache template language in JavaScript.
  * @license MIT
- * @version 0.2.4
+ * @version 0.2.5
  * @author Vadim Chernenko
  * @see {@link http://mustache.github.io/mustache.5.html|Mustache reference}
  * @see {@link https://github.com/v4ernenko/Mestache|Mestache source code repository}
  */
 
-var Mestache = (function () {
+var Mestache = (function (undefined) {
     'use strict';
 
     // Internal helper methods
@@ -76,13 +76,9 @@ var Mestache = (function () {
             escapeHTML: function (value) {
                 return String(value)
                     .replace(/&/g, '&amp;')
-
                     .replace(/</g, '&lt;')
-
                     .replace(/>/g, '&gt;')
-
                     .replace(/"/g, '&quot;')
-
                     .replace(/'/g, '&#39;');
             }
         };
@@ -90,7 +86,6 @@ var Mestache = (function () {
     // Template tags description
 
     var oTag = '{{',
-
         cTagRE = /\}\}\}?/g;
 
     /**
@@ -103,13 +98,9 @@ var Mestache = (function () {
 
     function parseTemplate(template) {
         var type,
-
             name,
-
             stack = [],
-
             tokens = [],
-
             chunks = template.replace(cTagRE, oTag).split(oTag);
 
         util.forEach(chunks, function (chunk, index) {
@@ -211,9 +202,7 @@ var Mestache = (function () {
             value = context;
 
             var i = 0,
-
                 names = name.split('.'),
-
                 namesLength = names.length;
 
             while (value && i < namesLength) {
@@ -296,7 +285,7 @@ var Mestache = (function () {
                 case 'name':
                     var value = getContextValue(token.name, context);
 
-                    if (util.isEmpty(value)) {
+                    if (value === null || value === undefined) {
                         return;
                     }
 
