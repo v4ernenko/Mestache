@@ -1,7 +1,7 @@
 /**
  * @overview Yet another implementation of the Mustache template language in JavaScript.
  * @license MIT
- * @version 0.2.5
+ * @version 0.3.0
  * @author Vadim Chernenko
  * @see {@link http://mustache.github.io/mustache.5.html|Mustache reference}
  * @see {@link https://github.com/v4ernenko/Mestache|Mestache source code repository}
@@ -80,13 +80,12 @@ var Mestache = (function (undefined) {
                     .replace(/>/g, '&gt;')
                     .replace(/"/g, '&quot;')
                     .replace(/'/g, '&#39;');
+            },
+
+            escapeRegExp: function (value) {
+                return String(value).replace(/([.*+?^=!:${}()|\[\]\/\\])/g, '\\$1');
             }
         };
-
-    // Template tags description
-
-    var oTag = '{{',
-        cTagRE = /\}\}\}?/g;
 
     /**
      * Breaks up the given `template` string into a tree of tokens.
@@ -96,11 +95,14 @@ var Mestache = (function (undefined) {
      * @private
      */
 
-    function parseTemplate(template) {
+    function parseTemplate(template, tags) {
         var type,
             name,
+            oTag = tags[0],
+            cTag = '\\}?' + util.escapeRegExp(tags[1]),
             stack = [],
             tokens = [],
+            cTagRE = new RegExp(cTag, 'g'),
             chunks = template.replace(cTagRE, oTag).split(oTag);
 
         util.forEach(chunks, function (chunk, index) {
@@ -309,15 +311,28 @@ var Mestache = (function (undefined) {
      * Mestache class.
      *
      * @param {string} template
+     * @param {Object} [params]
      * @constructor
      */
 
-    function Mestache(template) {
+    function Mestache(template, params) {
+        params || (params = {});
+
         if (!template || !util.isString(template)) {
             throw new Error('Mestache: bad template!');
         }
 
-        this._tokens = parseTemplate(template);
+        var tags = params.tags || ['{{', '}}'];
+
+        if (util.isString(tags)) {
+            tags = util.trim(tags).split(/\s+/, 2);
+        }
+
+        if (!util.isArray(tags) || tags.length !== 2) {
+            throw new Error('Mestache: invalid tags!');
+        }
+
+        this._tokens = parseTemplate(template, tags);
     }
 
     /**
